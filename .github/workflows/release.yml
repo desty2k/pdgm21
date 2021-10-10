@@ -1,0 +1,63 @@
+name: Release
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    name: Create GitHub release
+
+    steps:
+    - name: Get version
+      run: |
+        echo "BUILD_VERSION=$(cat VERSION)" | tr -d '\r\t\n' >> $GITHUB_ENV
+
+    - name: Get latest version
+      id: get_latest_version
+      continue-on-error: true
+      run: |
+        git fetch --tags
+        git fetch --prune --unshallow || true
+        git describe --abbrev=0 --tags > release_version.txt
+        echo "RELEASE_VERSION=$(cat release_version.txt)" | tr -d '\r\t\n' >> $GITHUB_ENV
+        echo "${{env.RELEASE_VERSION}}"
+    
+    - name: Echo environment variables
+      run: |
+        echo "Uploaded package version is: "
+        echo "${{env.BUILD_VERSION}}"
+        echo "Latest package version is:"
+        echo "${{env.RELEASE_VERSION}}"
+
+    - name: Create a first release
+      if: env.BUILD_VERSION != env.RELEASE_VERSION && env.RELEASE_VERSION == ''
+      uses: softprops/action-gh-release@v1
+      with:
+        body: 'First release'
+        tag_name: ${{ env.BUILD_VERSION }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+
+    - name: Generate changelog
+      if: env.BUILD_VERSION != env.RELEASE_VERSION && env.RELEASE_VERSION != ''
+      id: changelog
+      uses: metcalfc/changelog-generator@v1.0.0
+      with:
+        myToken: ${{ secrets.PUBLISH_TOKEN }}
+
+    - name: Create a release
+      if: env.BUILD_VERSION != env.RELEASE_VERSION && env.RELEASE_VERSION != ''
+
+      uses: softprops/action-gh-release@v1
+      with:
+        body: ${{ steps.changelog.outputs.changelog }}
+        tag_name: ${{ env.BUILD_VERSION }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+
+    - name: Skip release
+      if: env.BUILD_VERSION == env.RELEASE_VERSION
+      run: |
+        echo 'Skipping because version does not changed'
