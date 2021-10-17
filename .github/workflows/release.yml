@@ -10,6 +10,9 @@ jobs:
     name: Create GitHub release
 
     steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
     - name: Get version
       run: |
         echo "BUILD_VERSION=$(cat VERSION)" | tr -d '\r\t\n' >> $GITHUB_ENV
