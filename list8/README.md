@@ -1,5 +1,11 @@
 # Kalaha
 
+## PROJECT MOVED TO NEW REPOSITORY
+https://github.com/desty2k/Kalaha
+
+
+## Old README
+
 ![Game window](images/image-1.jpg)
 
 ## Installation
